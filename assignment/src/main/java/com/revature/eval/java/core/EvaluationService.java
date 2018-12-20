@@ -34,7 +34,7 @@ public class EvaluationService {
 	 * @return
 	 */
 	public String acronym(String phrase) {
-		String[] words = phrase.split("[\\W]");
+		String[] words = phrase.split("[\\W+]");
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < words.length; i++) {
 			String s = words[i];
@@ -98,24 +98,15 @@ public class EvaluationService {
 		}
 
 		public boolean isEquilateral() {
-			if (sideOne == sideTwo && sideTwo == sideThree) {
-				return true;
-			}
-			return false;
+			return sideOne == sideTwo && sideTwo == sideThree;
 		}
 
 		public boolean isIsosceles() {
-			if (sideOne == sideTwo || sideOne == sideThree || sideTwo == sideThree) {
-				return true;
-			}
-			return false;
+			return sideOne == sideTwo || sideOne == sideThree || sideTwo == sideThree;
 		}
 
 		public boolean isScalene() {
-			if (!isIsosceles()) {
-				return true;
-			}
-			return false;
+			return !isIsosceles();
 		}
 
 	}
@@ -276,16 +267,24 @@ public class EvaluationService {
 	 * binary search is a dichotomic divide and conquer search algorithm.
 	 * 
 	 */
-	static class BinarySearch<T> {
+	static class BinarySearch<T extends Comparable> {
 		private List<T> sortedList;
 
 		public int indexOf(T t) {
-			int size = sortedList.size();
-			int pivot = Math.floorDiv(size, 2);
-//			while (sortedList.get(pivot) != t) {
-//				if (sortedList.get(pivot).);
-//			}
-			return 0;
+			int left = 0;
+			int right = sortedList.size();
+			int pivot = Math.floorDiv(right, 2);
+			while (sortedList.get(pivot).compareTo(t) != 0) {
+				if (sortedList.get(pivot).compareTo(t) > 0) {
+					right = pivot;
+					pivot = left + Math.floorDiv(pivot - left, 2);
+				}
+				else {
+					left = pivot;
+					pivot = pivot + Math.floorDiv(right - pivot, 2);
+				}
+			}
+			return pivot;
 		}
 
 		public BinarySearch(List<T> sortedList) {
@@ -320,6 +319,8 @@ public class EvaluationService {
 	 * @param string
 	 * @return
 	 */
+	
+	//Could likely be a better implement with a StringBuilder
 	public String toPigLatin(String string) {
 		String output = "";
 		String vowels = "AEIOUaeiou";
@@ -434,6 +435,20 @@ public class EvaluationService {
 	 */
 	static class RotationalCipher {
 		private int key;
+		
+		private Character encryptC(char c) {
+			if (Character.isAlphabetic(c)) {
+				if (Character.isUpperCase(c)) {
+					int newVal = (int) c;
+					newVal = (newVal - 65 + key) % 26 + 65;
+					return (char) newVal;
+				}
+				int newVal = (int) c;
+				newVal = (newVal - 97 + key) % 26 + 97;
+				return (char) newVal;
+			}
+			return c;
+		}
 
 		public RotationalCipher(int key) {
 			super();
@@ -441,8 +456,11 @@ public class EvaluationService {
 		}
 
 		public String rotate(String string) {
-			// TODO Write an implementation for this method declaration
-			return null;
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < string.length(); i++) {
+				sb.append(encryptC(string.charAt(i)));
+			}
+			return sb.toString();
 		}
 
 	}
@@ -507,6 +525,25 @@ public class EvaluationService {
 	 *
 	 */
 	static class AtbashCipher {
+		
+		private static Character encryptLetter(char c) {
+			if (Character.isAlphabetic(c)) {
+				char lower = Character.toLowerCase(c);
+				int val = (int) lower;
+				int newVal = 219 - val;
+				return (char) newVal;
+			}
+			return c;
+		}
+		
+		private static Character decryptLetter(char c) {
+			if (Character.isAlphabetic(c)) {
+				int val = (int) c;
+				int newVal = 219 - val;
+				return (char) newVal;
+			}
+			return c;
+		}
 
 		/**
 		 * Question 13
@@ -515,8 +552,17 @@ public class EvaluationService {
 		 * @return
 		 */
 		public static String encode(String string) {
-			// TODO Write an implementation for this method declaration
-			return null;
+			String modified = string.toLowerCase().replaceAll("\\W+", "");
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < modified.length(); i++) {
+				char c = modified.charAt(i);
+				char encryptedC = encryptLetter(c);
+				if (i > 0 && i % 5 == 0) {
+					sb.append(" ");
+				}
+				sb.append(encryptedC);
+			}
+			return sb.toString();
 		}
 
 		/**
@@ -526,8 +572,14 @@ public class EvaluationService {
 		 * @return
 		 */
 		public static String decode(String string) {
-			// TODO Write an implementation for this method declaration
-			return null;
+			String modified = string.replaceAll("\\W+", "");
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < modified.length(); i++) {
+				char c = modified.charAt(i);
+				char decryptedC = decryptLetter(c);
+				sb.append(decryptedC);
+			}
+			return sb.toString();
 		}
 	}
 
@@ -565,7 +617,6 @@ public class EvaluationService {
 			}
 		}
 		if (digits.charAt(9) == 'X') {
-			System.out.println(checksum);
 			if ((checksum + 10) % 11 == 0) {
 				return true;
 			}
@@ -681,8 +732,27 @@ public class EvaluationService {
 	 * @return
 	 */
 	public boolean isLuhnValid(String string) {
-		// TODO Write an implementation for this method declaration
-		return false;
+		String modified = string.replaceAll("\\s+", "");
+		List<Integer> list = new ArrayList<Integer>(modified.length());
+		for (int i = 0; i < modified.length(); i++) {
+			if (!Character.isDigit(modified.charAt(i))) {
+				return false;
+			}
+			list.add(Integer.valueOf(modified.substring(i, i + 1)));
+		}
+		for (int i = list.size() - 2; i > 0; i-=2) {
+			Integer digit = list.get(i);
+			digit *= 2;
+			if (digit > 9) {
+				digit -= 9;
+			}
+			list.set(i, digit);
+		}
+		int sum = 0;
+		for (Integer i: list) {
+			sum += i;
+		}
+		return sum % 10 == 0;
 	}
 
 	/**
@@ -713,8 +783,31 @@ public class EvaluationService {
 	 * @return
 	 */
 	public int solveWordProblem(String string) {
-		// TODO Write an implementation for this method declaration
-		return 0;
+		string = string.replace("?", "");
+		String[] words = string.split("\\s");
+		if (words[0].equals("What") && words[1].equals("is")) {
+			int x, y;
+			try {
+				x = Integer.valueOf(words[2]);
+				y = Integer.valueOf(words[words.length - 1]);
+			}
+			catch (NumberFormatException e) {
+				throw new IllegalArgumentException();
+			}
+			switch (words[3]) {
+			case "plus":
+				return x + y;
+			case "minus":
+				return x - y;
+			case "multiplied":
+				return x * y;
+			case "divided":
+				return x / y;
+			default:
+				throw new IllegalArgumentException();
+			}
+		}
+		throw new IllegalArgumentException();
 	}
 
 }
