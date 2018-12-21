@@ -190,6 +190,12 @@ public class EvaluationServiceTest {
 		expectedException.expect(IllegalArgumentException.class);
 		evaluationService.cleanPhoneNumber("123-@:!-7890");
 	}
+	
+	@Test
+	public void invalidWithBadDigit() {
+		expectedException.expect(IllegalArgumentException.class);
+		evaluationService.cleanPhoneNumber("11034074159");
+	}
 
 	/*******************************************************************
 	 * Question 6

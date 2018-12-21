@@ -197,12 +197,19 @@ public class EvaluationService {
 	 * NANP-countries, only 1 is considered a valid country code.
 	 */
 	public String cleanPhoneNumber(String string) {
+		//Remove all non-digit characters
 		String removed = string.replaceAll("\\D", "");
 		if (removed.length() == 11 || removed.length() == 10) {
 			if (removed.length() == 11) {
 				if (removed.startsWith("1")) {
-					return removed.substring(1);
+					removed = removed.substring(1);
 				}
+			}
+			//Check for valid starting digits (referenced as N in spec for question
+			//A test case for this behavior was not initially included and was added
+			if (Integer.valueOf(removed.substring(0, 1)) < 2 ||
+				Integer.valueOf(removed.substring(3, 4)) < 2) {
+				throw new IllegalArgumentException();
 			}
 			return removed;
 		}
@@ -277,11 +284,11 @@ public class EvaluationService {
 			while (sortedList.get(pivot).compareTo(t) != 0) {
 				if (sortedList.get(pivot).compareTo(t) > 0) {
 					right = pivot;
-					pivot = left + Math.floorDiv(pivot - left, 2);
+					pivot = Math.floorDiv(pivot + left, 2);
 				}
 				else {
 					left = pivot;
-					pivot = pivot + Math.floorDiv(right - pivot, 2);
+					pivot = Math.floorDiv(right + pivot, 2);
 				}
 			}
 			return pivot;
@@ -335,6 +342,7 @@ public class EvaluationService {
 				//find first vowel
 				for (int j = 1; j < words[i].length(); j++) {
 					if (vowels.contains(Character.toString(words[i].charAt(j)))) {
+						//Special case if first letter is q, since sound requires vowel movement
 						if (words[i].charAt(j - 1) == 'q') {
 							String sub1 = words[i].substring(0, j + 1);
 							String sub2 = words[i].substring(j + 1);
@@ -392,6 +400,11 @@ public class EvaluationService {
 	 */
 	public List<Long> calculatePrimeFactorsOf(long l) {
 		List<Long> factors = new LinkedList<Long>();
+		
+		//Starting at 2, check if our long can be divided by the designated int
+		//If so, divide it, and continue process with quotient while storing divisor in list
+		//Otherwise, increment the potential divisor by 1 and repeat
+		//Once the quotient becomes 1, we have finished
 		long x = 2;
 		long topEnd = l;
 		while(x <= l) {
@@ -436,6 +449,7 @@ public class EvaluationService {
 	static class RotationalCipher {
 		private int key;
 		
+		//Rotating based on ASCII value
 		private Character encryptC(char c) {
 			if (Character.isAlphabetic(c)) {
 				if (Character.isUpperCase(c)) {
@@ -478,12 +492,18 @@ public class EvaluationService {
 	 * @return
 	 */
 	public int calculateNthPrime(int i) {
+		
+		//Checking a non-positive number makes no sense
 		if(i < 1) {
 			throw new IllegalArgumentException();
 		}
+		
 		List<Integer> primes = new ArrayList<Integer>(i);
 		primes.add(2);
 		int curr = 3;
+		
+		//Sequentially find all primes in order up to nth prime
+		//Adding to list, once a number is put into nth position, return
 		while(primes.size() < i) {
 			boolean isPrime = true;
 			for (Integer p: primes) {
@@ -526,19 +546,10 @@ public class EvaluationService {
 	 */
 	static class AtbashCipher {
 		
-		private static Character encryptLetter(char c) {
+		private static Character changeLetter(char c) {
 			if (Character.isAlphabetic(c)) {
 				char lower = Character.toLowerCase(c);
 				int val = (int) lower;
-				int newVal = 219 - val;
-				return (char) newVal;
-			}
-			return c;
-		}
-		
-		private static Character decryptLetter(char c) {
-			if (Character.isAlphabetic(c)) {
-				int val = (int) c;
 				int newVal = 219 - val;
 				return (char) newVal;
 			}
@@ -556,7 +567,7 @@ public class EvaluationService {
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < modified.length(); i++) {
 				char c = modified.charAt(i);
-				char encryptedC = encryptLetter(c);
+				char encryptedC = changeLetter(c);
 				if (i > 0 && i % 5 == 0) {
 					sb.append(" ");
 				}
@@ -576,7 +587,7 @@ public class EvaluationService {
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < modified.length(); i++) {
 				char c = modified.charAt(i);
-				char decryptedC = decryptLetter(c);
+				char decryptedC = changeLetter(c);
 				sb.append(decryptedC);
 			}
 			return sb.toString();
@@ -608,6 +619,7 @@ public class EvaluationService {
 	public boolean isValidIsbn(String string) {
 		int checksum = 0;
 		String digits = string.replaceAll("-", "");
+		//Check for first 9 digits to all be numbers after hyphens removed
 		for (int i = 0; i < 9; i ++) {
 			if (!Character.isDigit(digits.charAt(i))) {
 				return false;
@@ -616,12 +628,14 @@ public class EvaluationService {
 				checksum += Character.getNumericValue(digits.charAt(i)) * (10 - i);
 			}
 		}
+		//Allow for last digit to be X
 		if (digits.charAt(9) == 'X') {
 			if ((checksum + 10) % 11 == 0) {
 				return true;
 			}
 			return false;
 		}
+		//If here, last digit not X, so must be a digit
 		else if (!Character.isDigit(digits.charAt(9))) {
 			return false;
 		}
@@ -691,7 +705,6 @@ public class EvaluationService {
 				}
 			}
 		}
-		// TODO Write an implementation for this method declaration
 		return sum;
 	}
 
@@ -734,12 +747,16 @@ public class EvaluationService {
 	public boolean isLuhnValid(String string) {
 		String modified = string.replaceAll("\\s+", "");
 		List<Integer> list = new ArrayList<Integer>(modified.length());
+		
+		//Verify that all characters are digits and write to a list of integers
 		for (int i = 0; i < modified.length(); i++) {
 			if (!Character.isDigit(modified.charAt(i))) {
 				return false;
 			}
 			list.add(Integer.valueOf(modified.substring(i, i + 1)));
 		}
+		
+		//Double applicable digits
 		for (int i = list.size() - 2; i > 0; i-=2) {
 			Integer digit = list.get(i);
 			digit *= 2;
@@ -748,6 +765,8 @@ public class EvaluationService {
 			}
 			list.set(i, digit);
 		}
+		
+		//Add all the digits
 		int sum = 0;
 		for (Integer i: list) {
 			sum += i;
@@ -787,6 +806,9 @@ public class EvaluationService {
 		String[] words = string.split("\\s");
 		if (words[0].equals("What") && words[1].equals("is")) {
 			int x, y;
+			
+			//Make sure that the positions that are to contain numbers do not
+			//contain extraneous text, throw Exception if they do
 			try {
 				x = Integer.valueOf(words[2]);
 				y = Integer.valueOf(words[words.length - 1]);
@@ -794,6 +816,8 @@ public class EvaluationService {
 			catch (NumberFormatException e) {
 				throw new IllegalArgumentException();
 			}
+			
+			//Perform operation based on operative word
 			switch (words[3]) {
 			case "plus":
 				return x + y;
